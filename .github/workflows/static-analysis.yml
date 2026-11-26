@@ -1,0 +1,122 @@
+# Static analysis: CodeQL + Semgrep. Results go to the repo's Security tab (SARIF);
+# the build fails on high/critical findings, while medium/low show as alerts only.
+# Every third-party action is pinned to a full commit SHA (see CLAUDE.md: supply chain).
+name: Static analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "23 6 * * 1" # weekly, Monday 06:23 UTC, to catch newly published rules
+  workflow_dispatch:
+
+# Least privilege by default; each job asks only for what it needs.
+permissions: {}
+
+concurrency:
+  group: static-analysis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    name: CodeQL (JavaScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to code scanning
+      actions: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialise CodeQL
+        uses: github/codeql-action/init@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          queries: security-extended
+          # tests/ deliberately contains fake secrets and attack payloads; it isn't shipped.
+          config: |
+            paths-ignore:
+              - tests
+              - node_modules
+
+      - name: Analyse
+        uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
+        with:
+          category: /language:javascript-typescript
+          output: sarif-results
+
+      # Gate on the rule's security-severity score (>= 7.0 = high/critical), not just the
+      # SARIF level: CodeQL reports many high-severity security alerts at level "warning".
+      - name: Fail on high/critical findings
+        run: |
+          FILTER='[ .[].runs[]
+            | ( [ (.tool.driver.rules // []), ((.tool.extensions // []) | map(.rules // []) | add // []) ]
+                | add
+                | map({ key: .id, value: ((.properties["security-severity"] // "0") | tonumber) })
+                | from_entries ) as $sev
+            | .results[]
+            | select(.level == "error" or (($sev[.ruleId] // 0) >= 7.0))
+            | "\(.ruleId)  severity=\($sev[.ruleId] // "n/a")  \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine)  \(.message.text)" ]'
+          findings=$(jq -s "$FILTER" sarif-results/*.sarif)
+          count=$(echo "$findings" | jq 'length')
+          echo "CodeQL high/critical findings: $count"
+          if [ "$count" -gt 0 ]; then
+            echo "$findings" | jq -r '.[]'
+            exit 1
+          fi
+
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to code scanning
+    container:
+      image: semgrep/semgrep:1.187.0 # matches release v1.187.0 (082ca45478ee4dcc4275d805c0325a7fcd509990)
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan (all severities, SARIF)
+        run: >
+          semgrep scan
+          --config p/security-audit
+          --config p/owasp-top-ten
+          --config p/javascript
+          --config p/nodejs
+          --config p/secrets
+          --exclude tests
+          --exclude node_modules
+          --metrics off
+          --sarif --output semgrep.sarif
+
+      - name: Upload results to the Security tab
+        if: always() && hashFiles('semgrep.sarif') != ''
+        uses: github/codeql-action/upload-sarif@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+      - name: Fail on high/critical findings
+        run: >
+          semgrep scan
+          --config p/security-audit
+          --config p/owasp-top-ten
+          --config p/javascript
+          --config p/nodejs
+          --config p/secrets
+          --exclude tests
+          --exclude node_modules
+          --metrics off
+          --severity ERROR
+          --error

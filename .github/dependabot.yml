@@ -1,0 +1,20 @@
+# Keeps pinned dependencies current. Dependabot only opens PRs; the operator reviews and merges.
+version: 2
+updates:
+  - package-ecosystem: github-actions # bumps the pinned action SHAs in .github/workflows
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # CLAUDE.md prefers releases at least 7 days old.
+    cooldown:
+      default-days: 7

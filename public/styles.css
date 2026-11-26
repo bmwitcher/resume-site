@@ -1,0 +1,1749 @@
+/*
+  Resume site styles: palette A "field notes" (light cream, flat, army green
+  featured), mobile-first.
+
+  CSP note: the server sends style-src 'self', so every style lives in this
+  file. There are no style attributes and no <style> blocks in the HTML.
+
+  Contrast note: every text/background pair below is at least 4.5:1 (large
+  text 3:1), and interactive borders and the focus ring are at least 3:1.
+  Green only ever sits on cream or neutral surfaces, or is a fill carrying
+  cream text: never green text on a green fill. Sage and khaki are too light
+  for text or control borders on cream, so they are used for decoration only
+  (rules, the timeline line, card edges). Interactive outlines use the
+  sage-dark UI border (4.2:1 or more on every cream surface). The focus ring
+  is army on cream surfaces and cream on army fills.
+*/
+
+/* ---------- Fonts (self-hosted: the CSP allows font-src 'self' only) ----------
+   Barlow (regular width) for display and body type (SIL Open Font License).
+   Files live in public/fonts/. If they're missing, the system stack takes over
+   and the layout is unchanged; font-display: swap avoids invisible text.
+   No condensed fallbacks: "Arial Narrow" is a horizontally squeezed Arial and
+   looks distorted. */
+@font-face {
+  font-family: "Barlow";
+  src: url("/fonts/barlow-latin-700-normal.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Barlow";
+  src: url("/fonts/barlow-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Barlow";
+  src: url("/fonts/barlow-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- Design tokens ---------- */
+:root {
+  color-scheme: light;
+
+  /* Palette A (raw values live here only) */
+  --color-cream: #F5F0E1;       /* page */
+  --color-card: #FBF8EF;        /* cards and surfaces */
+  --color-cream-deep: #EFE8D4;  /* raised: tiles, assistant bubbles */
+  --color-ink: #2A2B1F;         /* text: 12.6:1 page, 13.5:1 card, 11.7:1 raised */
+  --color-ink-muted: #55533F;   /* muted text: 6.8:1 page, 7.3:1 card, 6.4:1 raised */
+  --color-army: #4B5320;        /* 7.2:1 page, 7.7:1 card, 6.7:1 raised */
+  --color-army-dark: #3A4119;   /* hover/active: 9.5:1 page, 8.8:1 raised */
+  --color-sage: #8A9A5B;        /* decoration only (2.7:1 on page) */
+  --color-khaki: #C8BC92;       /* decoration only (1.7:1 on page) */
+  --color-brass: #7A5C14;       /* small highlights: 5.5:1 page, 5.9:1 card, 5.1:1 raised */
+  --color-sage-dark: #65733C;   /* UI borders: 4.5:1 page, 4.9:1 card, 4.2:1 raised */
+  --color-brass-tint: #F3E7C9;  /* error background: ink 11.7:1, brass edge 5.1:1 */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  /* Semantic tokens */
+  --bg: var(--color-cream);
+  --surface: var(--color-card);
+  --surface-raised: var(--color-cream-deep);
+  --text: var(--color-ink);
+  --text-muted: var(--color-ink-muted);
+  --heading-accent: var(--color-army);
+  --link: var(--color-army);
+  --link-hover: var(--color-army-dark);
+  --text-date: var(--color-army);
+  --highlight: var(--color-brass);
+  --accent: var(--color-army);
+  --accent-hover: var(--color-army-dark);
+  --on-accent: var(--color-card);       /* cream text on army: 7.7:1, 10.1:1 on army-dark */
+  --header-bg: var(--color-army);
+  --button-bg: var(--color-army);
+  --button-bg-hover: var(--color-army-dark);
+  --button-text: var(--color-card);
+  --border-ui: var(--color-sage-dark);  /* inputs, buttons, interactive outlines */
+  --border-decor: var(--color-khaki);   /* card and tile edges (decorative) */
+  --rule: var(--color-sage);            /* decorative rules and lines */
+  --focus-ring: var(--color-army);
+  --focus-ring-on-accent: var(--color-card);
+  --chip-bg: var(--color-card);
+  --chip-border: var(--color-sage-dark);
+  --hover-tint: var(--color-cream-deep);
+  --error-bg: var(--color-brass-tint);
+  --error-border: var(--color-brass);
+  --shadow-color: rgb(42 43 31 / 0.18);
+  --border-hairline: rgb(42 43 31 / 0.1); /* quiet card edge; elevation comes from the shadows */
+
+  /* Elevation scale (soft, warm, layered) */
+  --shadow-sm: 0 1px 2px rgb(42 43 31 / 0.06), 0 2px 8px rgb(42 43 31 / 0.05);
+  --shadow-md: 0 1px 2px rgb(42 43 31 / 0.06), 0 8px 24px rgb(42 43 31 / 0.08);
+  --shadow-header: 0 1px 0 rgb(0 0 0 / 0.08), 0 6px 18px rgb(42 43 31 / 0.14);
+
+  /* Static contour lines for the hero only (army at 8% opacity). Worst case
+     under a line (#EDEBDE), text stays above 11.9:1, muted text above 6.5:1
+     and the army role line above 6.8:1. */
+  --contour: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='320' viewBox='0 0 640 320'%3E%3Cg fill='none' stroke='%234B5320' stroke-opacity='0.08' stroke-width='1.25'%3E%3Cpath d='M-10 250C70 205 140 270 240 230S410 130 520 160 640 120 660 110'/%3E%3Cpath d='M-10 210C80 165 150 235 250 190S420 90 530 120 640 80 660 70'/%3E%3Cpath d='M-10 170C90 125 160 195 260 150S430 50 540 80 640 40 660 30'/%3E%3Cpath d='M-10 290C60 255 130 305 230 270S400 175 510 200 640 165 660 155'/%3E%3Cpath d='M380 60c40-28 110-24 130 8s-30 58-80 52-88-34-50-60z'/%3E%3Cpath d='M405 66c26-16 72-14 84 6s-20 36-52 32-56-22-32-38z'/%3E%3C/g%3E%3C/svg%3E");
+
+  /* Type */
+  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fs-h1: clamp(2.5rem, 1.5rem + 4.8vw, 5rem);
+  --fs-h2: clamp(1.75rem, 1.3rem + 2vw, 2.75rem);
+  --fs-h3: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --fs-lead: clamp(1.125rem, 1rem + 0.6vw, 1.375rem);
+  --tracking-caps: 0.06em;
+  --fs-small: 0.875rem;
+
+  /* Shape, spacing, motion */
+  --radius-lg: 1rem;
+  --radius-md: 0.625rem;
+  --radius-pill: 999px;
+  --card-pad: clamp(1.25rem, 4vw, 2.5rem);
+  --section-gap: clamp(1.25rem, 4vw, 3rem);
+  --header-h: 3.75rem;
+  --chat-panel-w: min(26rem, calc(100vw - 2rem)); /* side panel width, also used to pad content beside it */
+  --dur-fast: 200ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-h) + 1rem);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Leave room for the floating chat button (only shown when JS runs). */
+.js body {
+  padding-bottom: 5.5rem;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0 0 1rem;
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--link);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+  transition: color var(--dur-fast) ease;
+}
+
+/* Branded text selection: cream on army (7.7:1). */
+::selection {
+  background: var(--color-army);
+  color: var(--color-card);
+}
+
+a:hover {
+  color: var(--link-hover);
+}
+
+button,
+summary {
+  cursor: pointer;
+}
+
+/* Very visible keyboard focus everywhere: army on cream surfaces. Areas on
+   an army fill override --focus-ring with cream. */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 0.375rem;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Chat triggers do nothing without JS, so hide them until app.js runs. */
+html:not(.js) .js-only {
+  display: none !important;
+}
+
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.icon {
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.container {
+  width: min(100% - 2rem, 1100px);
+  margin-inline: auto;
+}
+
+/* ---------- Skip link ---------- */
+/* Army fill with a cream edge, so it stands out over the army header band.
+   The focus ring is cream and inset, so it always sits on the army fill. */
+.skip-link {
+  --focus-ring: var(--focus-ring-on-accent);
+  position: fixed;
+  top: 0.75rem;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.875rem 1.25rem;
+  border: 2px solid var(--on-accent);
+  border-radius: var(--radius-md);
+  background: var(--button-bg);
+  color: var(--button-text);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  transform: translateY(-200%);
+  transition: transform var(--dur-fast) ease;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  color: var(--button-text);
+}
+
+.skip-link:focus-visible {
+  outline-offset: -7px;
+}
+
+/* ---------- Header band and nav ---------- */
+.site-header {
+  --focus-ring: var(--focus-ring-on-accent);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--accent-hover);
+  box-shadow: var(--shadow-header);
+}
+
+.header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.75rem;
+  min-height: var(--header-h);
+  padding-block: 0.25rem;
+}
+
+/* Phones: the nav wraps to two or three rows, so a pinned header would eat
+   the screen. Let it scroll away with the page below 768px. */
+@media (max-width: 767.98px) {
+  .site-header {
+    position: static;
+  }
+
+  html {
+    scroll-padding-top: 1rem;
+  }
+}
+
+/* Where the sticky header wraps to two or three rows (tablet portrait, and
+   desktop with the chat open), leave room so jumped-to sections and focused
+   elements aren't hidden under it. */
+@media (min-width: 768px) and (max-width: 899.98px) {
+  html {
+    scroll-padding-top: 10rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  html.chat-open {
+    scroll-padding-top: 10rem;
+  }
+}
+
+.brand {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 0.25rem;
+  color: var(--on-accent);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--on-accent);
+}
+
+.site-nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* All section links are always visible: the row wraps instead of scrolling,
+   so there's never a scroll bar. */
+.nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Cream on army (7.7:1), and on the darker hover fill (10.1:1). */
+.nav-list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.6rem;
+  border-radius: var(--radius-pill);
+  color: var(--on-accent);
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--dur-fast) ease;
+}
+
+.nav-list a:hover {
+  color: var(--on-accent);
+  background: var(--accent-hover);
+}
+
+/* Inset ring keeps it on the army band. */
+.nav-list a:focus-visible {
+  outline-offset: -3px;
+  border-radius: var(--radius-pill);
+}
+
+@media (min-width: 1024px) {
+  .site-nav {
+    flex: 0 1 auto;
+    margin-left: auto;
+  }
+
+  .nav-list {
+    justify-content: flex-end;
+  }
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.625rem 1.25rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    transform var(--dur-fast) ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+/* Army fill with cream text; the army fill itself is the 7.2:1 boundary
+   against the cream page. */
+.btn-primary {
+  background: var(--button-bg);
+  border-color: var(--button-bg);
+  color: var(--button-text);
+}
+
+.btn-primary:hover {
+  background: var(--button-bg-hover);
+  border-color: var(--button-bg-hover);
+  color: var(--button-text);
+  transform: translateY(-1px);
+}
+
+/* Outline button: army text and edge on the cream card. */
+.btn-secondary {
+  background: transparent;
+  border-color: var(--accent);
+  color: var(--link);
+}
+
+.btn-secondary:hover {
+  background: var(--hover-tint);
+  border-color: var(--accent-hover);
+  color: var(--link-hover);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.link-hint {
+  font-size: 0.875em;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border-ui);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+
+.icon-button:hover {
+  background: var(--hover-tint);
+  border-color: var(--accent);
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  margin-top: clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  border: 1px solid var(--border-hairline);
+  border-left: 6px solid var(--accent);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  background-image: var(--contour);
+  background-repeat: no-repeat;
+  background-position: right top;
+  background-size: 640px 320px;
+  box-shadow: var(--shadow-md);
+}
+
+/* Desktop: identity on the left, the four stats as a 2x2 block on the right.
+   Phones and tablets keep the stacked layout. */
+@media (min-width: 1024px) {
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    column-gap: clamp(2rem, 4vw, 3.5rem);
+    align-items: start;
+  }
+
+  .hero > * {
+    grid-column: 1;
+  }
+
+  .hero > .stats {
+    grid-column: 2;
+    grid-row: 1 / span 5;
+    align-self: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+  }
+
+  /* With the chat panel open there isn't room for two columns: the name and
+     stat numbers would break mid-word. Stack the hero; stats stay 2x2. */
+  html.chat-open .hero {
+    display: block;
+  }
+
+  html.chat-open .hero > .stats {
+    margin-top: 2rem;
+  }
+}
+
+/* Without JS the actions row is empty; don't leave a gap for it. */
+html:not(.js) .hero-actions {
+  display: none;
+}
+
+/* Neutral location badge (not an availability signal). */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+  padding: 0.3rem 0.85rem;
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.badge .icon {
+  color: var(--accent);
+}
+
+/* The name is the poster moment: big, bold, uppercase, natural width. */
+.hero h1 {
+  margin: 0 0 0.75rem;
+  font-size: var(--fs-h1);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+
+.name {
+  color: var(--text);
+}
+
+.hero-role {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+  color: var(--heading-accent);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* A short army rule before the role line (decorative). */
+.hero-role::before {
+  content: "";
+  flex: none;
+  width: 2.5rem;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* Focus areas as tags: a neutral fill, a sage-dark edge and army text, so
+   the green never sits on green. Wraps naturally on narrow screens. */
+.focus-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 56rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.focus-list li {
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--heading-accent);
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat,
+.stat-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border-decor);
+  border-top: 3px solid var(--highlight);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+/* The certifications stat is a link: the list item is only a wrapper and the
+   link carries the card styles, with a UI border so it reads as a control. */
+.stat-linked {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.stat-link {
+  height: 100%;
+  border-color: var(--border-ui);
+  border-top-color: var(--highlight);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--dur-fast) ease;
+}
+
+.stat-link:hover {
+  border-color: var(--accent);
+  border-top-color: var(--highlight);
+  color: inherit;
+}
+
+.stat-link:focus-visible {
+  border-radius: var(--radius-md);
+}
+
+.stat-value {
+  color: var(--highlight);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+  line-height: 1.45;
+}
+
+.stat-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: auto;
+  padding-top: 0.25rem;
+  color: var(--link);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  transition: color var(--dur-fast) ease;
+}
+
+.stat-hint .icon {
+  width: 1em;
+  height: 1em;
+}
+
+.stat-link:hover .stat-hint {
+  color: var(--link-hover);
+}
+
+@media (min-width: 768px) {
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Sections and cards ---------- */
+.section {
+  margin-top: var(--section-gap);
+}
+
+.card {
+  padding: var(--card-pad);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Army section titles over a sage rule, with the icon in an army tile
+   (cream icon on army). */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--rule);
+  color: var(--heading-accent);
+  font-size: var(--fs-h2);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.section-title .icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.45rem;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.subsection-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 2rem 0 0.75rem;
+  font-size: var(--fs-h3);
+}
+
+.section-title + .subsection-title {
+  margin-top: 0;
+}
+
+.subsection-title .icon {
+  color: var(--accent);
+}
+
+/* ---------- Professional overview ---------- */
+/* Lead paragraph: larger and set off by an army rule, so it reads as a
+   statement rather than body copy. */
+.overview-text {
+  max-width: 62ch;
+  margin: 0;
+  padding-left: clamp(1rem, 2.5vw, 1.5rem);
+  border-left: 4px solid var(--accent);
+  color: var(--text);
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+}
+
+/* ---------- Experience timeline ---------- */
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline-item {
+  position: relative;
+  padding: 0 0 2rem 2rem;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+/* Connecting line (decorative) */
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  top: 0.6rem;
+  bottom: -0.6rem;
+  left: 6px;
+  width: 2px;
+  background: var(--rule);
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+/* Dot (decorative) */
+.timeline-item::after {
+  content: "";
+  position: absolute;
+  top: 0.35rem;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.role-title {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.375rem, 1.2rem + 0.7vw, 1.75rem);
+  letter-spacing: 0.02em;
+}
+
+.role-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.role-org {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.role-dates {
+  color: var(--text-date);
+  font-weight: 600;
+}
+
+.bullets {
+  max-width: 78ch;
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.bullets li + li {
+  margin-top: 0.4rem;
+}
+
+.bullets li::marker {
+  color: var(--accent);
+}
+
+.more {
+  margin-top: 0.75rem;
+}
+
+.more summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-ui);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-weight: 600;
+  list-style: none;
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+
+.more summary::-webkit-details-marker {
+  display: none;
+}
+
+.more summary:hover {
+  background: var(--hover-tint);
+  border-color: var(--accent);
+}
+
+.more summary:focus-visible {
+  border-radius: var(--radius-pill);
+}
+
+.more summary .icon {
+  color: var(--accent);
+  transition: transform var(--dur-fast) ease;
+}
+
+.more[open] summary .icon {
+  transform: rotate(180deg);
+}
+
+/* ---------- Tiles (interests, achievements, skills) ---------- */
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  padding: 1.25rem;
+  border: 1px solid var(--border-decor);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.tile p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.tile-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+}
+
+.tile-title {
+  margin: 0 0 0.5rem;
+  color: var(--heading-accent);
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+h4.tile-title {
+  margin-bottom: 0.75rem;
+  font-size: 1.0625rem;
+}
+
+.tile-figure {
+  color: var(--highlight);
+}
+
+/* Interest cards: an army top rule and the icon on an army tile. */
+.interest {
+  border-top: 4px solid var(--accent);
+}
+
+.interest .tile-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Chips: a neutral cream fill, a sage-dark edge and ink text. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--text);
+  font-size: var(--fs-small);
+  line-height: 1.4;
+}
+
+/* ---------- Certifications ---------- */
+.cert-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cert-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border-decor);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.cert-list .icon {
+  margin-top: 0.1rem;
+  color: var(--accent);
+}
+
+.cert-more {
+  margin: 1.25rem 0 0;
+}
+
+@media (min-width: 768px) {
+  .cert-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Education and publication ---------- */
+.edu-list {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edu-list li {
+  padding-left: 1rem;
+  border-left: 3px solid var(--accent);
+}
+
+.edu-degree {
+  margin: 0 0 0.25rem;
+  font-size: var(--fs-h3);
+}
+
+.edu-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.9rem;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.edu-year {
+  color: var(--text-date);
+  font-weight: 600;
+}
+
+.pill {
+  display: inline-flex;
+  padding: 0.1rem 0.6rem;
+  border: 1px solid var(--highlight);
+  border-radius: var(--radius-pill);
+  color: var(--highlight);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.publication {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* No italic face is shipped, so avoid a browser-slanted fake italic. */
+.publication cite {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* ---------- Contact ---------- */
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  margin-top: var(--section-gap);
+  padding-bottom: 1.5rem;
+}
+
+.footer-inner {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border-decor);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+  text-align: center;
+}
+
+/* ---------- Scroll reveal ---------- */
+/* Applies only when app.js has added .reveal to <html> and motion is allowed,
+   so without JS (or with reduced motion) every section is simply visible. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal [data-reveal] {
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: opacity 250ms var(--ease), transform 250ms var(--ease);
+  }
+
+  .reveal [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Floating chat button ---------- */
+/* Army fill with a cream edge, so it stays distinct if it floats over an
+   army element; the ring outside it is army on the cream page. */
+.chat-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 3.5rem;
+  min-height: 3.5rem;
+  padding: 0 1.25rem;
+  border: 2px solid var(--on-accent);
+  border-radius: var(--radius-pill);
+  background: var(--button-bg);
+  color: var(--button-text);
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 24px var(--shadow-color);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+
+.chat-fab:hover {
+  background: var(--button-bg-hover);
+  transform: translateY(-2px);
+}
+
+.chat-fab:focus-visible {
+  border-radius: var(--radius-pill);
+}
+
+.chat-fab .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Icon-only on small phones; the label stays available to assistive tech. */
+@media (max-width: 479.98px) {
+  .chat-fab {
+    width: 3.5rem;
+    padding: 0;
+  }
+
+  .chat-fab-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+html.chat-open .chat-fab {
+  display: none;
+}
+
+/* ---------- Chat panel ---------- */
+/* Full-screen sheet on phones; a side panel from 768px. Not a modal. */
+.chat-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  color: var(--text);
+}
+
+@media (max-width: 767.98px) {
+  /* Stop the page scrolling behind the full-screen sheet. */
+  html.chat-open,
+  html.chat-open body {
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 768px) {
+  .chat-panel {
+    inset: 1rem 1rem 1rem auto;
+    width: var(--chat-panel-w);
+    border: 1px solid var(--border-ui);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 16px 48px var(--shadow-color);
+    overflow: hidden;
+  }
+}
+
+/* From 1024px, make room beside the open panel so it doesn't cover the nav
+   or the content (the extra 1rem matches the panel's inset). Between 768 and
+   1023px the panel overlaps the page. */
+@media (min-width: 1024px) {
+  html.chat-open .header-inner,
+  html.chat-open main {
+    padding-right: calc(var(--chat-panel-w) + 1rem);
+  }
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.75rem 0.75rem 1.25rem;
+  border-bottom: 3px solid var(--accent);
+}
+
+.chat-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.375rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chat-title .icon {
+  color: var(--accent);
+}
+
+.chat-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* The body is focusable for keyboard scrolling; an inset ring keeps the
+   focus outline inside the panel, which clips anything outside it. */
+.chat-body:focus-visible {
+  outline-offset: -3px;
+  border-radius: 0;
+}
+
+.chat-intro {
+  margin-bottom: 0.75rem;
+}
+
+.chat-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+}
+
+.chat-disclaimer .icon {
+  margin-top: 0.1rem;
+  color: var(--accent);
+}
+
+.chat-starters {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.starter {
+  min-height: 44px;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border-ui);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  text-align: left;
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+
+.starter:hover {
+  background: var(--hover-tint);
+  border-color: var(--accent);
+}
+
+.starter:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.msg {
+  max-width: 88%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 1rem;
+}
+
+/* The visitor's bubble: army fill with cream text (7.7:1). */
+.msg-user {
+  align-self: flex-end;
+  border-bottom-right-radius: 0.25rem;
+  background: var(--button-bg);
+  color: var(--button-text);
+}
+
+/* Assistant bubble: deeper cream with ink text (11.7:1). */
+.msg-assistant {
+  align-self: flex-start;
+  border-bottom-left-radius: 0.25rem;
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+/* Replies are plain text; keep the model's line breaks. */
+.msg-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.msg-note .msg-text {
+  color: var(--text-muted);
+}
+
+/* Marks a reply that was cut off (closed, replaced or failed mid-stream).
+   Muted and small rather than italic (no italic face is shipped). */
+.msg-stopped {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+}
+
+.typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: 0.35rem 0;
+}
+
+.typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: typing 1.2s ease-in-out infinite;
+}
+
+.typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes typing {
+  0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+
+.chat-footer {
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid var(--border-decor);
+}
+
+/* The alert region stays rendered (so announcements are reliable) and only
+   takes up space when it has a message. On light it gets a brass-tinted fill,
+   a full brass edge (5.1:1) with a thick left bar, and ink text (11.7:1). */
+.chat-error:not(:empty) {
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid var(--error-border);
+  border-left-width: 6px;
+  border-radius: var(--radius-md);
+  background: var(--error-bg);
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.chat-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-weight: 600;
+}
+
+.chat-form textarea {
+  display: block;
+  width: 100%;
+  min-height: 4.5rem;
+  max-height: 10rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border-ui);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem; /* 16px avoids iOS zoom on focus */
+  resize: vertical;
+  transition: border-color var(--dur-fast) ease;
+}
+
+.chat-form textarea:hover {
+  border-color: var(--accent);
+}
+
+.chat-form textarea:focus-visible {
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+.chat-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.chat-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+/* ---------- Reduced motion ---------- */
+/* Everything is static: no reveal, no typing bounce, no hover lift. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .typing span {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .btn:hover,
+  .btn:active,
+  .chat-fab:hover {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Print ---------- */
+/* A plain black-on-white resume: no header band, texture, chat or navigation.
+   The hero already shows the name, so the header is hidden. */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    color: var(--color-black) !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html,
+  body,
+  html.chat-open,
+  html.chat-open body {
+    overflow: visible !important;
+  }
+
+  html {
+    scroll-padding-top: 0;
+  }
+
+  body,
+  .js body {
+    min-height: 0;
+    padding-bottom: 0;
+    background: var(--color-white) !important;
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+
+  /* Interactive-only parts, plus the header (the hero shows the name). */
+  .skip-link,
+  .site-header,
+  .chat-panel,
+  .chat-fab,
+  .js-only,
+  .hero-actions,
+  .link-hint,
+  .stat-hint {
+    display: none !important;
+  }
+
+  html.chat-open .header-inner,
+  html.chat-open main {
+    padding-right: 0;
+  }
+
+  .container {
+    width: auto;
+  }
+
+  /* Everything the scroll reveal would hide is shown. */
+  [data-reveal],
+  .reveal [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .hero,
+  .card,
+  .footer-inner {
+    display: block;
+    margin-top: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .section {
+    margin-top: 1.25rem;
+  }
+
+  .hero h1 {
+    font-size: 24pt;
+  }
+
+  .section-title {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.2rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 14pt;
+  }
+
+  .section-title .icon,
+  .interest .tile-icon {
+    width: 1.1em;
+    height: 1.1em;
+    padding: 0;
+  }
+
+  .hero-role,
+  .role-title,
+  .tile-title,
+  .edu-degree,
+  .subsection-title {
+    font-size: 11.5pt;
+  }
+
+  .badge {
+    margin-bottom: 0.5rem;
+    padding: 0;
+    border: 0;
+    font-weight: 400;
+  }
+
+  /* Focus areas print as one pipe-separated line. */
+  .focus-list {
+    gap: 0 0.4rem;
+  }
+
+  .focus-list li {
+    padding: 0;
+    border: 0;
+    font-size: inherit;
+    font-weight: 400;
+  }
+
+  .focus-list li:not(:last-child)::after {
+    content: " |";
+  }
+
+  .overview-text {
+    max-width: none;
+    padding-left: 0;
+    border-left: 0;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .hero-role::before {
+    display: none;
+  }
+
+  .stats {
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 14pt;
+  }
+
+  .stat,
+  .stat-link,
+  .tile,
+  .cert-list li {
+    padding: 0.25rem 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .tile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1.5rem;
+  }
+
+  .tile-icon {
+    display: none;
+  }
+
+  .chips {
+    gap: 0 0.4rem;
+  }
+
+  .chips li {
+    padding: 0;
+    border: 0;
+    font-size: inherit;
+  }
+
+  .chips li:not(:last-child)::after {
+    content: ",";
+  }
+
+  .cert-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem 1.5rem;
+  }
+
+  .edu-list li,
+  .pill {
+    border-color: currentColor;
+  }
+
+  .timeline-item {
+    padding: 0 0 0.75rem;
+  }
+
+  .timeline-item::before,
+  .timeline-item::after {
+    display: none;
+  }
+
+  .bullets {
+    margin-top: 0.35rem;
+  }
+
+  .bullets li + li {
+    margin-top: 0.15rem;
+  }
+
+  /* Expand the extra USAA highlights where the browser allows it in CSS. */
+  @supports selector(::details-content) {
+    .more summary {
+      display: none;
+    }
+
+    .more::details-content {
+      content-visibility: visible;
+    }
+  }
+
+  .more summary {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .btn {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    font-weight: 400;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+
+  a[href^="https://"]::after {
+    content: " (" attr(href) ")";
+  }
+
+  .role,
+  .tile,
+  .stat,
+  .cert-list li,
+  .edu-list li {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid;
+  }
+}

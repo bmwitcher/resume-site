@@ -1,0 +1,16 @@
+{
+  "name": "resume-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Resume website with a recruiter Q&A chatbot (Claude Haiku 5.5).",
+  "engines": { "node": ">=26.13.1" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/",
+    "audit": "npm audit --omit=dev && npm audit signatures"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.10.0"
+  }
+}
